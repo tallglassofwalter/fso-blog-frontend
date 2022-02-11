@@ -10,7 +10,7 @@ const App = () => {
   const [newTitle, setNewTitle] = useState('');
   const [newAuthor, setNewAuthor] = useState('');
   const [newUrl, setNewUrl] = useState('');
-  const [errorMessage, setErrorMessage] = useState(null);
+  const [message, setMessage] = useState(null);
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -22,7 +22,7 @@ const App = () => {
         setBlogs(blogs)
       );
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const loggedUserJSON = window.localStorage.getItem('loggedBlogAppUser');
@@ -33,23 +33,31 @@ const App = () => {
     }
   }, []);
 
-  const addBlog = (e) => {
+  const addBlog = async (e) => {
     e.preventDefault();
-    const blogObj = {
-      title: newTitle,
-      author: newAuthor,
-      url: newUrl,
-      likes: 0,
-      user: user.username
-    };
-    blogService
-      .create(blogObj)
-      .then((returnedBlog) => {
-        setBlogs(blogs.concat(returnedBlog));
-        setNewTitle('');
-        setNewAuthor('');
-        setNewUrl('');
-      });
+    try {
+      const blogObj = {
+        title: newTitle,
+        author: newAuthor,
+        url: newUrl,
+        likes: 0,
+        user: user.username
+      };
+      let response = await blogService.create(blogObj);
+      setBlogs(blogs.concat(response));
+      setMessage(`${newTitle} by ${newAuthor} added`);
+      setTimeout(() => {
+        setMessage(null);
+      }, 5000);
+      setNewTitle('');
+      setNewAuthor('');
+      setNewUrl('');
+    } catch (exception) {
+      setMessage(exception.response.data.error);
+      setTimeout(() => {
+        setMessage(null);
+      }, 5000);
+    }
   }
 
   const handleTitleChange = (e) => {
@@ -70,9 +78,9 @@ const App = () => {
       setUsername('');
       setPassword('');
     } catch (exception) {
-      setErrorMessage('Wrong credentials');
+      setMessage('Wrong credentials');
       setTimeout(() => {
-        setErrorMessage(null);
+        setMessage(null);
       }, 5000);
     }
   }
@@ -151,7 +159,7 @@ const App = () => {
   return (
     <div>
       <h2>blogs</h2>
-      <Notification message={errorMessage} />
+      <Notification message={message} />
 
       {
         user === null ?
